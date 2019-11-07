@@ -1,7 +1,4 @@
 import * as WebBrowser from 'expo-web-browser';
-
-import filestack from '../assets/scripts/filestack';
-
 import React from 'react';
 import {
   Image,
@@ -13,7 +10,9 @@ import {
   View,
 } from 'react-native';
 
-import ReactFilestack from 'filestack-react';
+import { Slider, ButtonGroup } from 'react-native-elements';
+
+import { Switch } from 'react-native-paper';
 
 import { MonoText } from '../components/StyledText';
 import { file } from '@babel/types';
@@ -23,12 +22,16 @@ export default class CameraScreen extends React.Component {
     super(props);
 
     this.state = {
-      status: '',
-      currentImage: undefined
+      currentImage: undefined,
+      zoom: 0,
+      selectedIndex: 1,
+      isSwitchOn: false,
     }
 
     this.poll = this.poll.bind(this);
     this.onPress = this.onPress.bind(this);
+    this.updateIndex = this.updateIndex.bind(this)
+    this.handleZoom = this.handleZoom.bind(this);
   }
   
   componentDidMount() {
@@ -42,7 +45,6 @@ export default class CameraScreen extends React.Component {
       .then(response => response.json())
       .then(responseJson => {
         console.log(responseJson);
-        // this.setState({status: JSON.stringify(responseJson)});
         const fileReaderInstance = new FileReader();
         this.poll(fileReaderInstance);
       })
@@ -61,19 +63,13 @@ export default class CameraScreen extends React.Component {
       .then(response => response.json())
       .then(responseJson => {
         console.log(responseJson);
-        // this.setState({status: JSON.stringify(responseJson)});
         setTimeout(() => {
           return fetch('http://172.20.10.2:8080/ccapi/ver100/contents/sd/100CANON?type=jpeg')
             .then(response => response.json())
             .then(responseJson => {
               const last = responseJson.url[responseJson.url.length - 1];
-              
-              return fetch('https://canonshot.free.beeceptor.com', {
-                method: 'POST',
-                body: JSON.stringify({
-                  af: true
-                }),
-              })
+              this.props.receivePhoto(last);
+              console.log(last);
             })
             .catch(error => {
               console.error(error);
@@ -106,10 +102,56 @@ export default class CameraScreen extends React.Component {
       });
   }
 
+  updateIndex(selectedIndex) {
+    this.setState({ selectedIndex });
+
+    const options = ['near1', 'near2', 'near3', 'far1', 'far2', 'far3'];
+    const selectedOption = options[selectedIndex];
+
+    return fetch('http://172.20.10.2:8080/ccapi/ver100/shooting/control/drivefocus', {
+      method: 'POST',
+      body: JSON.stringify({
+        value: selectedOption
+      }),
+    })
+      .then(response => response.blob())
+      .then(blob => {
+        const fileReaderInstance = new FileReader();
+        fileReaderInstance.readAsText(blob);
+        fileReaderInstance.onload = () => {
+          base64data = fileReaderInstance.result;
+          console.log(base64data);
+        }
+        
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  }
+
+  handleZoom(value) {
+    this.setState({zoom: Math.floor(value * 100)});
+
+    return fetch('http://172.20.10.2:8080/ccapi/ver100/shooting/control/zoom', {
+      method: 'POST',
+      body: JSON.stringify({
+        value: Math.floor(value * 100)
+      })
+    })
+      .then(response => console.log(response))
+      .catch(error => {
+        console.error(error);
+      });
+  }
+
   render() {
-    // const slides = {
-    //   image: require(this.props.currentImage),
-    // }
+    const { isSwitchOn } = this.state;
+
+    const buttons = ['Near 1', 'Near 2', 'Near 3', 'Far 1', 'Far 2', 'Far 3'];
+    const { selectedIndex } = this.state;
+
+    const switchText = this.state.isSwitchOn === true ? 'Pro' : 'Simple'
+    const switchMargin = this.state.isSwitchOn === true ? 195 : 182
 
     const currentImage = this.state.currentImage === undefined ? <Text>No image</Text> : <Image
       style={{ width: 420, height: 350 }}
@@ -120,44 +162,54 @@ export default class CameraScreen extends React.Component {
     />
 
     return (
-      <View style={styles.container}>
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.contentContainer}>
-          <View style={{flex: 1, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 30}}>
-            <Image
-              source={require('../assets/images/logo.png')}
-              style={{width: 400, height: 50}}
-            />
-          </View>
-
-          <View style={styles.getStartedContainer}>
-            <Text style={styles.getStartedText}>{this.state.status}</Text>
-
-            { currentImage }
-  
-            <View
-              style={[styles.codeHighlightContainer, styles.CameraScreenFilename]}>
-              <MonoText>screens/CameraScreen.js</MonoText>
+        <View style={styles.container}>
+          <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.contentContainer}>
+            <View style={{flex: 1, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 30}}>
+              <Image
+                source={require('../assets/images/logo.png')}
+                style={{width: 400, height: 50}}
+              />
             </View>
 
-            <Text style={styles.getStartedText}>
-              Settings will go here
-          </Text>
-          </View>
-        </ScrollView>
+            <View style={{ flex: 1, alignItems: 'stretch', justifyContent: 'center' }}>
+              { currentImage }
 
-        <View style={styles.tabBarInfoContainer}>
-          <TouchableHighlight
-            onPress={this.onPress}
-          >
-            <Image 
-              source={require('../assets/images/button.png')}
-              style={{ width: 80, height: 80 }}
+              <ButtonGroup
+                onPress={this.updateIndex}
+                selectedIndex={selectedIndex}
+                buttons={buttons}
+                containerStyle={{ height: 50 }}
+              />
+
+              <Slider
+                value={this.state.value}
+                onValueChange={value => this.handleZoom(value)}
+              />
+              <Text>Zoom: {this.state.zoom}</Text>
+
+            <Switch
+              value={isSwitchOn}
+              style={{marginTop: 20, marginLeft: 180}}
+              onValueChange={() => { this.setState({ isSwitchOn: !isSwitchOn }); }
+              }
             />
-          </TouchableHighlight>
+            <Text style={{ marginLeft: switchMargin }}>{ switchText }</Text>
+            </View>
+          </ScrollView>
+
+          <View style={styles.tabBarInfoContainer}>
+            <TouchableHighlight
+              onPress={this.onPress}
+            >
+              <Image 
+                source={require('../assets/images/button.png')}
+                style={{ width: 80, height: 80 }}
+              />
+            </TouchableHighlight>
+          </View>
         </View>
-      </View>
     );
   }
 }
