@@ -53,7 +53,7 @@ export default class PhotosScreen extends React.Component {
                   uri:
                     this.state.currentPhoto,
                 }}
-                style={{ width: 500, height: 800 }}
+                style={{ width: 450, height: 800 }}
               />
 
               <TouchableHighlight

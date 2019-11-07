@@ -57,7 +57,7 @@ export default class CameraScreen extends React.Component {
     return fetch('http://172.20.10.2:8080/ccapi/ver100/shooting/control/shutterbutton', {
       method: 'POST',
       body: JSON.stringify({
-        af: true
+        af: !this.state.isSwitchOn
       }),
     })
       .then(response => response.json())
@@ -150,8 +150,8 @@ export default class CameraScreen extends React.Component {
     const buttons = ['Near 1', 'Near 2', 'Near 3', 'Far 1', 'Far 2', 'Far 3'];
     const { selectedIndex } = this.state;
 
-    const switchText = this.state.isSwitchOn === true ? 'Pro' : 'Simple'
-    const switchMargin = this.state.isSwitchOn === true ? 195 : 182
+    const switchText = this.state.isSwitchOn === true ? 'Manual' : 'Auto'
+    const switchMargin = this.state.isSwitchOn === true ? 180 : 190
 
     const currentImage = this.state.currentImage === undefined ? <Text>No image</Text> : <Image
       style={{ width: 420, height: 350 }}
