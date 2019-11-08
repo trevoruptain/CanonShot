@@ -1,7 +1,6 @@
 import React from 'react';
 import { Text, View, StyleSheet, Image, Modal, TouchableHighlight } from 'react-native';
 
-
 export default class PhotosScreen extends React.Component {
   constructor(props) {
     super(props);

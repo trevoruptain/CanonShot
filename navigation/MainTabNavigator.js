@@ -6,6 +6,7 @@ import TabBarIcon from '../components/TabBarIcon';
 import CameraScreenContainer from '../screens/CameraScreenContainer';
 import PhotosScreenContainer from '../screens/PhotosScreenContainer';
 import SettingsScreen from '../screens/SettingsScreen';
+import FileStackScreen from '../screens/FileStackScreen';
 
 const config = Platform.select({
   web: { headerMode: 'screen' },
@@ -67,10 +68,34 @@ SettingsStack.navigationOptions = {
 
 SettingsStack.path = '';
 
+const FileStackStack = createStackNavigator(
+  {
+    Upload: FileStackScreen,
+  },
+  config
+);
+
+FileStackStack.navigationOptions = {
+  tabBarLabel: 'Upload',
+  tabBarIcon: ({ focused }) => (
+    <TabBarIcon
+      focused={focused}
+      name={
+        Platform.OS === 'ios'
+          ? 'ios-arrow-dropup'
+          : 'md-arrow-dropup-circle'
+      }
+    />
+  ),
+};
+
+FileStackStack.path = '';
+
 const tabNavigator = createBottomTabNavigator({
   CameraStack,
   PhotosStack,
   SettingsStack,
+  FileStackStack
 });
 
 tabNavigator.path = '';

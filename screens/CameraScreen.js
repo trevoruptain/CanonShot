@@ -1,4 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
+import { Constants } from 'expo';
+import * as Permissions from 'expo-permissions';
+
 import React from 'react';
 import {
   Image,
@@ -8,6 +11,7 @@ import {
   Text,
   TouchableHighlight,
   View,
+  CameraRoll
 } from 'react-native';
 
 import { Slider, ButtonGroup } from 'react-native-elements';
@@ -32,6 +36,7 @@ export default class CameraScreen extends React.Component {
     this.onPress = this.onPress.bind(this);
     this.updateIndex = this.updateIndex.bind(this)
     this.handleZoom = this.handleZoom.bind(this);
+    this.useLibraryHandler = this.useLibraryHandler.bind(this);
   }
   
   componentDidMount() {
@@ -69,6 +74,7 @@ export default class CameraScreen extends React.Component {
             .then(responseJson => {
               const last = responseJson.url[responseJson.url.length - 1];
               this.props.receivePhoto(last);
+              this.useLibraryHandler(last);
               console.log(last);
             })
             .catch(error => {
@@ -144,6 +150,22 @@ export default class CameraScreen extends React.Component {
       });
   }
 
+  askPermissionsAsync = async () => {
+    await Permissions.askAsync(Permissions.CAMERA);
+    await Permissions.askAsync(Permissions.CAMERA_ROLL);
+    // you would probably do something to verify that permissions
+    // are actually granted, but I'm skipping that for brevity
+  };
+
+  useLibraryHandler = async (fileUrl) => {
+    // await this.askPermissionsAsync();
+    setTimeout(() => {
+      console.log('about to save')
+      CameraRoll.saveToCameraRoll(fileUrl, 'photo');
+    }, 5000)
+    
+  };
+
   render() {
     const { isSwitchOn } = this.state;
 
@@ -183,11 +205,15 @@ export default class CameraScreen extends React.Component {
                 containerStyle={{ height: 50 }}
               />
 
+              <View style={{paddingLeft: 30, paddingRight: 30}}>
+
               <Slider
                 value={this.state.value}
                 onValueChange={value => this.handleZoom(value)}
               />
               <Text>Zoom: {this.state.zoom}</Text>
+
+            </View>
 
             <Switch
               value={isSwitchOn}
